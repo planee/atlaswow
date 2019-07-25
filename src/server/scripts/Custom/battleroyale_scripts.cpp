@@ -403,7 +403,7 @@ public:
         if (!playerTarget)
             playerTarget = player;
 
-        QueryResult result = CharacterDatabase.PQuery("SELECT SUM(battleroyale_players_stats.totalKills), SUM(battleroyale_players_stats.totalDeath), SUM(battleroyale_players_stats.totalTop1) FROM battleroyale_players_stats JOIN characters ON battleroyale_players_stats.guid = characters.account WHERE season = 1 AND characters.account = %u", playerTarget->GetSession()->GetAccountId());
+        QueryResult result = CharacterDatabase.PQuery("SELECT SUM(battleroyale_players_stats.totalKills), SUM(battleroyale_players_stats.totalDeath), SUM(battleroyale_players_stats.totalTop1) FROM battleroyale_players_stats WHERE season = 1 AND guid = 1", playerTarget->GetSession()->GetAccountId());
 
         Field* fields = result->Fetch();
         uint32 totalKills = fields[0].GetUInt32();

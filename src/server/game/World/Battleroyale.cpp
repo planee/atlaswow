@@ -211,7 +211,6 @@ void checkReward(Player* player, uint32 gameId) {
     if (playersCount == 1 && Battleroyale::m_games[gameId].isStarted == true && Battleroyale::m_games[gameId].category == SOLO) {
             Player* lastPlayer = getTheLastPlayer(gameId);
             Battleroyale::removePlayer(lastPlayer, true);
-            rewardPlayer(lastPlayer, playersCount, true, gameId);
             std::string msg = lastPlayer->GetName() + " just made top 1 on " + mapName;
             ChatHandler(lastPlayer->GetSession()).SendGlobalSysMessage(msg.c_str());
             Battleroyale::reloadGameId(gameId);
@@ -744,14 +743,14 @@ void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iter
 uint32 Battleroyale::getRating(Player* player)
 {
 
-    QueryResult result = CharacterDatabase.PQuery("SELECT battleroyale_players_stats.guid, battleroyale_players_stats.totalKills, battleroyale_players_stats.totalDeath, totalTop1,  characters.`name`, characters.class, characters.race, SUM((battleroyale_players_stats.totalKills + (totalTop1 *3))) as rating FROM battleroyale_players_stats  JOIN characters ON battleroyale_players_stats.guid = characters.account WHERE season = 1 AND battleroyale_players_stats.guid = %u GROUP BY battleroyale_players_stats.guid ORDER BY rating DESC", player->GetSession()->GetAccountId());
+    QueryResult result = CharacterDatabase.PQuery("SELECT battleroyale_players_stats.totalDeath, SUM((battleroyale_players_stats.totalKills + (totalTop1 *3))) as rating FROM battleroyale_players_stats WHERE season = 1 AND battleroyale_players_stats.guid = %u ORDER BY rating DESC", player->GetSession()->GetAccountId());
 
     if (!result)
         return 0;
 
     Field* fields = result->Fetch();
-    uint32 totalDeath = fields[2].GetUInt32();
-    int rating = fields[7].GetUInt32();
+    uint32 totalDeath = fields[0].GetUInt32();
+    int rating = fields[1].GetUInt32();
 
     if (rating == 0)
         return rating;
