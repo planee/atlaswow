@@ -814,9 +814,9 @@ void Battleroyale::update(uint64 diff)
 
             if ((it->second.diff >= it->second.nextEventTimer) && it->second.firstRound == true) {
 
-                if (it->second.MAX_ITERATION >= 9)
+                if (it->second.MAX_ITERATION == 9)
                     it->second.iteration += 3;
-                if(it->second.MAX_ITERATION >= 12)
+                if(it->second.MAX_ITERATION == 12)
                     it->second.iteration += 4;
                 if(it->second.MAX_ITERATION >= 15)
                     it->second.iteration += 5;
