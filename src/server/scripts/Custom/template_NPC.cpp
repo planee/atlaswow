@@ -559,8 +559,6 @@ public:
             sTemplateNpcMgr->RemoveAllGlyphs(player);
             player->ResetTalents(true);
             player->SendTalentsInfoData(false);
-            player->GetSession()->SendAreaTriggerMessage("Your talents have been reset.");
-            player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
             CloseGossipMenuFor(player);
         }
 
@@ -619,7 +617,6 @@ public:
                 AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30:30:-18:0|t|r Use Unholy Spec", GOSSIP_SENDER_MAIN, 29);
                 break;
             }
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "Reset Talents", GOSSIP_SENDER_MAIN, 31);
             SendGossipMenuFor(player, 55002, me->GetGUID());
             return true;
         }

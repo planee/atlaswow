@@ -743,19 +743,24 @@ void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iter
 uint32 Battleroyale::getRating(Player* player)
 {
 
-    QueryResult result = CharacterDatabase.PQuery("SELECT battleroyale_players_stats.totalDeath, SUM((battleroyale_players_stats.totalKills + (totalTop1 *3))) as rating FROM battleroyale_players_stats WHERE season = 1 AND battleroyale_players_stats.guid = %u ORDER BY rating DESC", player->GetSession()->GetAccountId());
+    QueryResult result = CharacterDatabase.PQuery("SELECT totalKills, battleroyale_players_stats.totalDeath, totalTop1 FROM battleroyale_players_stats WHERE season = 1 AND battleroyale_players_stats.guid = %u", player->GetSession()->GetAccountId());
 
     if (!result)
         return 0;
 
     Field* fields = result->Fetch();
-    uint32 totalDeath = fields[0].GetUInt32();
-    int rating = fields[1].GetUInt32();
+    uint32 totalKills = fields[0].GetUInt32();
+    uint32 totalDeath = fields[1].GetUInt32();
+    uint32 totalTop1 = fields[2].GetUInt32();
 
-    if (rating == 0)
-        return rating;
-    else
-        return rating - totalDeath;
+    int rating = (totalKills + (totalTop1 * 3))  - totalDeath;
+
+
+    if (rating <= 0)
+        return 0;
+
+    return rating;
+
 }
 
 void Battleroyale::update(uint64 diff)
