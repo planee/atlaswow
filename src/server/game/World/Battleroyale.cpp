@@ -324,23 +324,43 @@ void Battleroyale::reloadGameId(uint32 gameId) {
     if (!result)
         return;
 
-    do
-    {
-        std::vector<ObjectGuid> playersGuid;
-        Field* fields = result->Fetch();
-        game.name = fields[1].GetString();
-        game.playersGuid = playersGuid;
-        game.spawnsPlayers = loadSpawnsPlayersByGameId(gameId);
-        game.spawnsChest = loadSpawnChestsByGameId(gameId);
-        game.minPlayer = fields[3].GetInt8();
-        game.category = fields[4].GetInt8();
-        game.firstEventTimer = fields[5].GetUInt32();
-        game.nextEventTimer = fields[6].GetUInt32();
-        game.radius = fields[7].GetUInt32();
-        game.icon = fields[8].GetString();
-        Battleroyale::m_games[gameId] = game;
 
-    } while (result->NextRow());
+    for (auto const& tracer : Battleroyale::m_games[gameId].tracers) {
+        if (tracer->GetGUID()) {
+            tracer->SetRespawnTime(0);
+            tracer->Delete();
+            tracer->DeleteFromDB();
+        }
+    }
+
+
+    if (Battleroyale::m_games[gameId].flag->GetGUID()) {
+        Battleroyale::m_games[gameId].flag->SetRespawnTime(0);
+        Battleroyale::m_games[gameId].flag->Delete();
+        Battleroyale::m_games[gameId].flag->DeleteFromDB();
+    }
+
+    std::vector<ObjectGuid> playersGuid;
+    std::vector<GameObject*> tracers;
+    Field* fields = result->Fetch();
+    Battleroyale::m_games[gameId].name = fields[1].GetString();
+    Battleroyale::m_games[gameId].playersGuid = playersGuid;
+    Battleroyale::m_games[gameId].spawnsPlayers = loadSpawnsPlayersByGameId(gameId);
+    Battleroyale::m_games[gameId].spawnsChest = loadSpawnChestsByGameId(gameId);
+    Battleroyale::m_games[gameId].minPlayer = fields[3].GetInt8();
+    Battleroyale::m_games[gameId].category = fields[4].GetInt8();
+    Battleroyale::m_games[gameId].firstEventTimer = fields[5].GetUInt32();
+    Battleroyale::m_games[gameId].nextEventTimer = fields[6].GetUInt32();
+    Battleroyale::m_games[gameId].radius = fields[7].GetUInt32();
+    Battleroyale::m_games[gameId].icon = fields[8].GetString();
+    Battleroyale::m_games[gameId].iteration = 0;
+    Battleroyale::m_games[gameId].isStarted = false;
+    Battleroyale::m_games[gameId].firstRound = false;
+    Battleroyale::m_games[gameId].flag = nullptr;
+    Battleroyale::m_games[gameId].tracers = tracers;
+    Battleroyale::m_games[gameId].diff = 0;
+    Battleroyale::m_games[gameId].diffAnnoncement = 0;
+
 }
 
 
@@ -486,6 +506,10 @@ void Battleroyale::removePlayer(Player* player, bool lastPlayer)
                     removeLootOnDeath(p);
                     rewardPlayer(player, position, false, it->first);
 
+
+                    if (p->GetAuraCount(39672) > 0)
+                        p->RemoveAura(39672);
+
                     if(p->isDead())
                         p->ResurrectPlayer(100.f);
 
@@ -606,6 +630,10 @@ void Battleroyale::removePlayerFromGroup(Player* player, bool removePlayer)
                     if(p->isDead())
                         p->ResurrectPlayer(100.f);
 
+
+                    if(p->GetAuraCount(39672) > 0)
+                        p->RemoveAura(39672);
+
                     p->TeleportTo(0, 4289.833984f, -2768.049805f, 6.868990f, 3.639589f); // TP TO LOBBY
                     removeLootOnDeath(p);
 
@@ -700,7 +728,7 @@ void sendCenterToPlayer(Player *player, float x, float y) {
 }
 
 
-void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iteration, int MAX_ITERATION) {
+void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iteration, int MAX_ITERATION, uint32 gameId) {
 
 
     float x = flag->GetPositionX();
@@ -724,8 +752,9 @@ void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iter
             pos.m_positionY = y_temp;
             pos.m_positionZ = floorZ;
 
-            flag->SummonGameObject(185578, pos, QuaternionData(), timer, GO_SUMMON_TIMED_DESPAWN);
+            GameObject* flag1 = flag->SummonGameObject(185578, pos, QuaternionData(), timer, GO_SUMMON_TIMED_DESPAWN);
 
+            Battleroyale::m_games[gameId].tracers.push_back(flag1);
 
             float floorZ2 = flag->GetMapHeight(x_temp1, y_temp1, MAX_HEIGHT);
 
@@ -735,7 +764,10 @@ void spawnCreatureAroundCircle(int radius, GameObject* flag, int timer, int iter
             pos2.m_positionY = y_temp1;
             pos2.m_positionZ = floorZ2;
 
-            flag->SummonGameObject(185578, pos2, QuaternionData(), timer, GO_SUMMON_TIMED_DESPAWN);
+            GameObject* flag2 =  flag->SummonGameObject(185578, pos2, QuaternionData(), timer, GO_SUMMON_TIMED_DESPAWN);
+
+            Battleroyale::m_games[gameId].tracers.push_back(flag2);
+
 
     }
 }
@@ -807,7 +839,7 @@ void Battleroyale::update(uint64 diff)
                     }
                 }
 
-                spawnCreatureAroundCircle(it->second.radius, flag, it->second.nextEventTimer, it->second.iteration, it->second.MAX_ITERATION);
+                spawnCreatureAroundCircle(it->second.radius, flag, it->second.nextEventTimer, it->second.iteration, it->second.MAX_ITERATION, it->first);
                 it->second.firstRound = true;
                 it->second.diff = 0;
             }
@@ -823,7 +855,8 @@ void Battleroyale::update(uint64 diff)
 
                 int MAX_ITERATION = it->second.MAX_ITERATION;
                 int radius = calculateRadius(it->second.radius, it->second.iteration, MAX_ITERATION);
-                spawnCreatureAroundCircle(radius, it->second.flag, it->second.nextEventTimer, it->second.iteration, MAX_ITERATION);
+
+                spawnCreatureAroundCircle(radius, it->second.flag, it->second.nextEventTimer, it->second.iteration, MAX_ITERATION, it->first);
 
                 for (auto const& guid : it->second.playersGuid) {
                     if (Player * p = ObjectAccessor::FindPlayer(guid)) {
