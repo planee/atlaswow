@@ -623,6 +623,7 @@ void Battleroyale::removePlayerFromGroup(Player* player, bool removePlayer)
 
 
 void removeSpawn(std::vector<Battleroyale::Spawn>&spawns, Battleroyale::Spawn spawn) {
+
     for (auto iter = spawns.begin(); iter != spawns.end(); ++iter) {
         if (iter->mapId == spawn.mapId && iter->x == spawn.x && iter->y == spawn.y && iter->z == spawn.z) {
             iter = spawns.erase(iter);
@@ -636,13 +637,12 @@ void Battleroyale::start(uint32 gameId)
     Battleroyale::m_games[gameId].isStarted = true;
     spawnChestAtStart(gameId);
     uint8 category = Battleroyale::m_games[gameId].category;
-    std::vector<Battleroyale::Spawn>&spawns = Battleroyale::m_games[gameId].spawnsPlayers;
 
     uint32 count = 0;
     if (category > SOLO) {
         for (auto it = Battleroyale::m_games.begin(); it != Battleroyale::m_games.end(); ++it) {
             for (auto IJ = it->second.GROUPS.begin(); IJ != it->second.GROUPS.end(); ++IJ) {
-                uint32 rand = urand(0, spawns.size() - 1);
+                uint32 rand = urand(0, Battleroyale::m_games[gameId].spawnsPlayers.size() - 1);
                 for (auto member : IJ->second) {
                     Player* player = ObjectAccessor::FindPlayer(member.guid);
                     if (player) {
@@ -651,10 +651,10 @@ void Battleroyale::start(uint32 gameId)
                         if(player->isDead())
                             player->ResurrectPlayer(100.f);
 
-                        player->TeleportTo(spawns[rand].mapId, spawns[rand].x, spawns[rand].y, spawns[rand].z, player->GetOrientation());
+                        player->TeleportTo(Battleroyale::m_games[gameId].spawnsPlayers[rand].mapId, Battleroyale::m_games[gameId].spawnsPlayers[rand].x, Battleroyale::m_games[gameId].spawnsPlayers[rand].y, Battleroyale::m_games[gameId].spawnsPlayers[rand].z, player->GetOrientation());
                     }
                 }
-                removeSpawn(spawns, spawns[rand]);
+                removeSpawn(Battleroyale::m_games[gameId].spawnsPlayers, Battleroyale::m_games[gameId].spawnsPlayers[rand]);
             }
         }
         TC_LOG_ERROR("ERROR", "Started : Total groups %u", Battleroyale::m_games[gameId].GROUPS.size());
@@ -662,9 +662,9 @@ void Battleroyale::start(uint32 gameId)
     else {
         for (auto const& guid : Battleroyale::m_games[gameId].playersGuid) {
             if (Player * p = ObjectAccessor::FindPlayer(guid)) {
-                uint32 rand = urand(0, spawns.size() - 1);
-                removeSpawn(spawns, spawns[rand]);
-                p->TeleportTo(spawns[rand].mapId, spawns[rand].x, spawns[rand].y, spawns[rand].z, p->GetOrientation());
+                uint32 rand = urand(0, Battleroyale::m_games[gameId].spawnsPlayers.size() - 1);
+                p->TeleportTo(Battleroyale::m_games[gameId].spawnsPlayers[rand].mapId, Battleroyale::m_games[gameId].spawnsPlayers[rand].x, Battleroyale::m_games[gameId].spawnsPlayers[rand].y, Battleroyale::m_games[gameId].spawnsPlayers[rand].z, p->GetOrientation());
+                removeSpawn(Battleroyale::m_games[gameId].spawnsPlayers, Battleroyale::m_games[gameId].spawnsPlayers[rand]);
                 p->GetSpellHistory()->ResetAllCooldowns();
                 count++;
                 ChatHandler chat(p->GetSession());

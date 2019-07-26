@@ -164,6 +164,28 @@ void WorldSession::SendTrainerList(Creature* npc)
     trainer->SendSpells(npc, _player, GetSessionDbLocaleIndex());
 }
 
+void WorldSession::SendTrainerList(Creature* npc, uint32 entry)
+{
+    // remove fake death
+    if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
+        GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
+
+    Trainer::Trainer const* trainer = sObjectMgr->GetTrainer(entry);
+    if (!trainer)
+    {
+        TC_LOG_DEBUG("network", "WorldSession: SendTrainerList - trainer spells not found for %s", npc->GetGUID().ToString().c_str());
+        return;
+    }
+
+    if (!trainer->IsTrainerValidForPlayer(_player))
+    {
+        TC_LOG_DEBUG("network", "WorldSession: SendTrainerList - trainer %s not valid for player %s", npc->GetGUID().ToString().c_str(), GetPlayerInfo().c_str());
+        return;
+    }
+
+    trainer->SendSpells(npc, _player, GetSessionDbLocaleIndex());
+}
+
 void WorldSession::HandleTrainerBuySpellOpcode(WorldPackets::NPC::TrainerBuySpell& packet)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_TRAINER_BUY_SPELL %s, learn spell id is: %u", packet.TrainerGUID.ToString().c_str(), packet.SpellID);

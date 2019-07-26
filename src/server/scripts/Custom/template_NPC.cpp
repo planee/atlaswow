@@ -84,7 +84,7 @@ void sTemplateNPC::LearnTemplateTalents(Player* player)
     {
         if ((*itr)->playerClass == GetClassString(player).c_str() && (*itr)->playerSpec == sTalentsSpec)
         {
-            player->LearnSpell((*itr)->talentId, false);
+            player->LearnSpellHighestRank((*itr)->talentId);
             player->AddTalent((*itr)->talentId, player->GetActiveSpec(), true);
         }
     }
@@ -544,6 +544,26 @@ public:
     {
         TemplateNPC_AI(Creature* creature) : ScriptedAI(creature) { }
 
+
+        void ResetTemplate(Player* player) {
+            for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
+            {
+                if (Item * haveItemEquipped = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+                {
+                    if (haveItemEquipped)
+                    {
+                        player->DestroyItemCount(haveItemEquipped->GetEntry(), 1, true);
+                    }
+                }
+            }
+            sTemplateNpcMgr->RemoveAllGlyphs(player);
+            player->ResetTalents(true);
+            player->SendTalentsInfoData(false);
+            player->GetSession()->SendAreaTriggerMessage("Your talents have been reset.");
+            player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
+            CloseGossipMenuFor(player);
+        }
+
         bool GossipHello(Player* player) override
         {
             switch (player->getClass())
@@ -599,8 +619,6 @@ public:
                 AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "|cff00ff00|TInterface\\icons\\spell_deathknight_unholypresence:30:30:-18:0|t|r Use Unholy Spec", GOSSIP_SENDER_MAIN, 29);
                 break;
             }
-
-            AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "Reset my character", GOSSIP_SENDER_MAIN, 30);
             AddGossipItemFor(player, GOSSIP_ICON_INTERACT_1, "Reset Talents", GOSSIP_SENDER_MAIN, 31);
             SendGossipMenuFor(player, 55002, me->GetGUID());
             return true;
@@ -721,6 +739,10 @@ public:
 
             if (!player || !me)
                 return false;
+
+            if (action <= 29) {
+                ResetTemplate(player);
+            }
 
             switch (action)
             {
@@ -901,34 +923,6 @@ public:
             case 29: // Use Unholy DK Spec
                 sTemplateNpcMgr->sTalentsSpec = "Unholy";
                 EquipFullTemplateGear(player, sTemplateNpcMgr->sTalentsSpec);
-                CloseGossipMenuFor(player);
-                break;
-
-            case 30:
-                for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-                {
-                    if (Item * haveItemEquipped = player->GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-                    {
-                        if (haveItemEquipped)
-                        {
-                            player->DestroyItemCount(haveItemEquipped->GetEntry(), 1, true, true);
-
-                            if (haveItemEquipped->IsInWorld())
-                            {
-                                haveItemEquipped->RemoveFromWorld();
-                                haveItemEquipped->DestroyForPlayer(player);
-                                haveItemEquipped->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid::Empty);
-                                haveItemEquipped->SetSlot(NULL_SLOT);
-                                haveItemEquipped->SetState(ITEM_REMOVED, player);
-                            }
-                        }
-                    }
-                }
-                sTemplateNpcMgr->RemoveAllGlyphs(player);
-                player->ResetTalents(true);
-                player->SendTalentsInfoData(false);
-                player->GetSession()->SendAreaTriggerMessage("Your talents have been reset.");
-                player->GetSession()->SendAreaTriggerMessage("Your glyphs have been removed.");
                 CloseGossipMenuFor(player);
                 break;
 

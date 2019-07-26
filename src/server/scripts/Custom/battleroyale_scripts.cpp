@@ -403,15 +403,13 @@ public:
         if (!playerTarget)
             playerTarget = player;
 
-        QueryResult result = CharacterDatabase.PQuery("SELECT SUM(battleroyale_players_stats.totalKills), SUM(battleroyale_players_stats.totalDeath), SUM(battleroyale_players_stats.totalTop1) FROM battleroyale_players_stats WHERE season = 1 AND guid = 1", playerTarget->GetSession()->GetAccountId());
+        QueryResult result = CharacterDatabase.PQuery("SELECT SUM(battleroyale_players_stats.totalKills), SUM(battleroyale_players_stats.totalDeath), SUM(battleroyale_players_stats.totalTop1) FROM battleroyale_players_stats WHERE season = 1 AND guid = %u", playerTarget->GetSession()->GetAccountId());
 
         Field* fields = result->Fetch();
         uint32 totalKills = fields[0].GetUInt32();
         uint32 totalDeath = fields[1].GetUInt32();
         uint32 totalTop1 = fields[2].GetUInt32();
         uint32 ranking = Battleroyale::getRating(player);
-
-
 
         std::string msg = "Rating : " + std::to_string(ranking) + " - Total kill(s) : " + std::to_string(totalKills) + " - Total Death(s) : " + std::to_string(totalDeath) + " - Total top1(s) : " + std::to_string(totalTop1) + ". You can also use this command on any player.";
 

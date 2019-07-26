@@ -359,6 +359,7 @@ class TC_GAME_API WorldSession
         void SendNameQueryOpcode(ObjectGuid guid);
 
         void SendTrainerList(Creature* npc);
+        void SendTrainerList(Creature* npc, uint32 entry);
         void SendListInventory(ObjectGuid guid, uint32 vendorEntry = 0);
         void SendShowBank(ObjectGuid guid);
         bool CanOpenMailBox(ObjectGuid guid);

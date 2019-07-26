@@ -87,7 +87,6 @@
 #include "WhoListStorage.h"
 #include "WorldSession.h"
 #include "Battleroyale.h"
-#include "StatSystem.h"
 
 #include <boost/asio/ip/address.hpp>
 
