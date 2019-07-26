@@ -326,15 +326,13 @@ void Battleroyale::reloadGameId(uint32 gameId) {
 
 
     for (auto const& tracer : Battleroyale::m_games[gameId].tracers) {
-        if (tracer->GetGUID()) {
-            tracer->SetRespawnTime(0);
-            tracer->Delete();
-            tracer->DeleteFromDB();
-        }
+        tracer->SetRespawnTime(0);
+        tracer->Delete();
+        tracer->DeleteFromDB();
     }
 
 
-    if (Battleroyale::m_games[gameId].flag->GetGUID()) {
+    if (Battleroyale::m_games[gameId].flag) {
         Battleroyale::m_games[gameId].flag->SetRespawnTime(0);
         Battleroyale::m_games[gameId].flag->Delete();
         Battleroyale::m_games[gameId].flag->DeleteFromDB();
@@ -357,7 +355,7 @@ void Battleroyale::reloadGameId(uint32 gameId) {
     Battleroyale::m_games[gameId].isStarted = false;
     Battleroyale::m_games[gameId].firstRound = false;
     Battleroyale::m_games[gameId].flag = nullptr;
-    Battleroyale::m_games[gameId].tracers = tracers;
+    Battleroyale::m_games[gameId].tracers.clear();
     Battleroyale::m_games[gameId].diff = 0;
     Battleroyale::m_games[gameId].diffAnnoncement = 0;
 
